@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
-          pip install requests feedparser anthropic python-dotenv
+          pip install requests feedparser anthropic python-dotenv markdown2
 
       - name: Run in test mode
         id: run_test
@@ -54,7 +54,7 @@ jobs:
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
-          pip install requests feedparser anthropic python-dotenv
+          pip install requests feedparser anthropic python-dotenv markdown2
 
       - name: Run in production mode
         env:

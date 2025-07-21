@@ -23,7 +23,7 @@ TEST_MODE=true python3 ai_news_collector.py
 ### Installing Dependencies
 Since there's no requirements.txt file, install dependencies manually:
 ```bash
-pip install requests feedparser anthropic python-dotenv
+pip install requests feedparser anthropic python-dotenv markdown2
 ```
 
 ### Environment Setup

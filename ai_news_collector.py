@@ -9,6 +9,7 @@ import anthropic
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import markdown2
 from dotenv import load_dotenv
 import os
 import sys
@@ -40,6 +41,8 @@ class AINewsCollector:
         
         # ニュースAPI（例：NewsAPI）
         self.news_api_key = None  # NewsAPIのキーを設定
+        # GitHubのWebページ
+        self.github_url = "https://github.com/HayatoFunahashi/ai_news"
         
     def collect_rss_news(self, hours_back: int = 24) -> List[NewsItem]:
         """RSSフィードからニュースを収集"""
@@ -227,6 +230,7 @@ class AINewsCollector:
 4. 投資家が注目すべきポイント
 
 わかりやすく、具体性のある日本語で簡潔に書いてください。
+出力形式はマークダウン形式に準拠してください．
 """
         
         try:
@@ -256,20 +260,19 @@ class AINewsCollector:
             msg['Subject'] = f"AI News Summary - {datetime.now().strftime('%Y-%m-%d')}"
             
             body = f"""
-AI関連ニュース要約レポート
-生成日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+## AI関連ニュース要約レポート
+
+> 生成日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 {headlines}
 
----
-
 {summary}
 
----
-このメールは自動生成されました。
+このメールは自動生成されました。  
+[GitHubリポジトリはこちら]({self.github_url})
 """
-            
-            msg.attach(MIMEText(body, 'plain', 'utf-8'))
+            html_body = markdown2.markdown(body)
+            msg.attach(MIMEText(html_body, 'html', 'utf-8'))
             
             server = smtplib.SMTP(smtp_server, smtp_port)
             server.starttls()

@@ -23,7 +23,7 @@ AI関連ニュースを自動収集し、投資判断に役立つ要約を生成
 
 ### 必要なライブラリ
 ```bash
-pip install requests feedparser anthropic python-dotenv
+pip install requests feedparser anthropic python-dotenv markdown2
 ```
 
 ### API キー
@@ -40,7 +40,7 @@ cd ai_news
 
 2. 依存関係をインストール
 ```bash
-pip install requests feedparser anthropic python-dotenv
+pip install requests feedparser anthropic python-dotenv markdown2
 ```
 
 3. 環境設定ファイルを作成
