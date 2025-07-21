@@ -23,7 +23,7 @@ AI関連ニュースを自動収集し、投資判断に役立つ要約を生成
 
 ### 必要なライブラリ
 ```bash
-pip install requests feedparser anthropic python-dotenv markdown2
+pip install requests feedparser anthropic python-dotenv markdown2 jinja2
 ```
 
 ### API キー
@@ -40,7 +40,7 @@ cd ai_news
 
 2. 依存関係をインストール
 ```bash
-pip install requests feedparser anthropic python-dotenv markdown2
+pip install requests feedparser anthropic python-dotenv markdown2 jinja2
 ```
 
 3. 環境設定ファイルを作成
@@ -75,6 +75,16 @@ RECIPIENT_EMAIL=recipient@example.com  # メール送信先アドレス
 
 ### 3. 収集対象の設定
 `AINewsCollector`クラスの`rss_feeds`リストを編集して、収集対象のRSSフィードを追加・削除できます。
+
+現在の収集源：
+- VentureBeat AI
+- AI News
+- O'Reilly Radar  
+- OpenAI Blog
+- DeepMind Blog
+
+### 4. HTMLメールテンプレート
+メール送信機能では`templates/email_template.html`のJinja2テンプレートを使用してHTMLメールを生成します。
 
 ## 使用方法
 
@@ -127,7 +137,9 @@ TEST_MODE=true python3 ai_news_collector.py
 
 - `ai_news_YYYYMMDD_HHMMSS.json`: 構造化されたニュースデータ
 - `ai_news_summary_YYYYMMDD_HHMMSS.txt`: 要約テキスト
+- `templates/email_template.html`: HTMLメール用Jinja2テンプレート
 - `test_data.json`: テスト用のサンプルデータ（管理用）
+- `tools/ai_commit.sh`: Claude Code CLIを使用したAI powered コミットメッセージ生成スクリプト
 
 ### JSON出力形式
 
@@ -154,7 +166,11 @@ TEST_MODE=true python3 ai_news_collector.py
 
 ```python
 self.rss_feeds = [
-    "https://example.com/ai-news/rss",
+    "https://feeds.feedburner.com/venturebeat/SZYF",  # VentureBeat AI
+    "https://www.artificialintelligence-news.com/feed/",  # AI News
+    "https://feeds.feedburner.com/oreilly/radar/atom",  # O'Reilly Radar
+    "https://blog.openai.com/rss.xml",  # OpenAI Blog
+    "https://deepmind.com/blog/feed/basic/",  # DeepMind
     # 新しいフィードを追加
     "https://new-source.com/feed"
 ]
@@ -165,14 +181,23 @@ self.rss_feeds = [
 
 ```python
 ai_keywords = [
-    'AI', 'artificial intelligence',
+    'AI', 'artificial intelligence', 'machine learning', 'deep learning',
+    'neural network', 'ChatGPT', 'OpenAI', 'Google AI', 'Microsoft AI',
+    'NVIDIA', 'autonomous', 'computer vision', 'natural language processing',
+    'LLM', 'large language model', 'generative AI', 'AGI'
     # 新しいキーワードを追加
-    'transformer', 'GPT', 'BERT'
+    # 'transformer', 'GPT', 'BERT'
 ]
 ```
 
 ### 要約プロンプトのカスタマイズ
-`summarize_with_claude`メソッドのプロンプトを編集して、要約の観点や形式を変更できます。
+`summarize_with_claude`メソッドのプロンプトを編集して、要約の観点や形式を変更できます。現在は投資判断に特化した観点で以下の要素を含む要約を生成します：
+- 主要なトレンドや動向
+- 注目すべき企業や技術
+- 市場への潜在的影響  
+- 投資家が注目すべきポイント
+
+使用モデル: `claude-opus-4-20250514` (Claude Opus 4)
 
 ## トラブルシューティング
 
@@ -220,6 +245,21 @@ python3 ai_news_collector.py --test
 TEST_MODE=true python3 ai_news_collector.py
 ```
 
+## 追加機能・ツール
+
+### AI Commit Message Generator
+`tools/ai_commit.sh`は、Claude Code CLIを使用してコミットメッセージを自動生成するスクリプトです。
+
+```bash
+# 使用方法
+./tools/ai_commit.sh
+```
+
+特徴：
+- Conventional Commits形式でのメッセージ生成
+- Git差分の自動解析
+- インタラクティブな承認・編集機能
+
 ## 今後の計画
 
 - [ ] 感情分析機能の追加
@@ -228,6 +268,8 @@ TEST_MODE=true python3 ai_news_collector.py
 - [ ] 銘柄影響分析機能（第二段階）
 - [ ] リアルタイム通知機能
 - [x] テストモードの実装（API利用料節約）
+- [x] HTMLメール送信機能の実装
+- [x] AI powered コミットメッセージ生成ツールの追加
 
 ## サポート
 
