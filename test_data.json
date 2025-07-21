@@ -1,0 +1,33 @@
+{
+  "test_news_items": [
+    {
+      "title": "OpenAI Releases GPT-4.5 with Enhanced Reasoning Capabilities",
+      "url": "https://example.com/openai-gpt45",
+      "published": "2025-01-15T10:00:00",
+      "content": "OpenAI announced the release of GPT-4.5, featuring improved reasoning capabilities and reduced hallucinations. The model shows significant improvements in mathematical problem-solving and code generation.",
+      "source": "AI News"
+    },
+    {
+      "title": "Google DeepMind Achieves Breakthrough in Protein Folding Prediction",
+      "url": "https://example.com/deepmind-protein",
+      "published": "2025-01-15T14:30:00",
+      "content": "DeepMind's latest AlphaFold version can predict protein structures with 99% accuracy, opening new possibilities for drug discovery and biological research.",
+      "source": "DeepMind Blog"
+    },
+    {
+      "title": "Microsoft Copilot Integration Drives Enterprise AI Adoption",
+      "url": "https://example.com/microsoft-copilot",
+      "published": "2025-01-15T16:45:00",
+      "content": "Microsoft reports 70% increase in enterprise AI tool usage following Copilot integration across Office 365 suite. Companies show significant productivity gains.",
+      "source": "VentureBeat"
+    },
+    {
+      "title": "NVIDIA's New AI Chip Architecture Promises 10x Performance Boost",
+      "url": "https://example.com/nvidia-chip",
+      "published": "2025-01-15T12:20:00",
+      "content": "NVIDIA unveils next-generation GPU architecture specifically designed for large language model training, promising 10x performance improvement over current generation.",
+      "source": "Tech Crunch"
+    }
+  ],
+  "expected_summary": "# 本日のAI業界動向要約\n\n## 主要なトレンドや動向\n- 大手AI企業が相次いで技術革新を発表\n- AIモデルの性能向上と実用性の拡大が加速\n- 企業向けAIツールの導入が急速に進展\n- ハードウェアとソフトウェアの両面でAI技術が進化\n\n## 注目すべき企業や技術\n- **OpenAI**: GPT-4.5の推論能力向上により競争優位性を維持\n- **Google DeepMind**: タンパク質構造予測で創薬分野への影響拡大\n- **Microsoft**: Copilot統合による企業市場での地位強化\n- **NVIDIA**: 次世代AIチップで計算基盤のリーダーシップ継続\n\n## 市場への潜在的影響\n- AI関連企業の業績向上が期待される\n- 創薬・バイオテック分野への新たな投資機会\n- エンタープライズソフトウェア市場の成長加速\n- AI計算インフラ需要の急激な拡大\n\n## 投資家が注目すべきポイント\n- OpenAI関連企業（Microsoft等）への継続的な注目\n- DeepMindの技術を活用する創薬企業への投資機会\n- Microsoft株の企業AI導入による収益成長期待\n- NVIDIA及び半導体関連企業の長期成長性\n- AI導入により生産性向上を実現する企業の選別投資\n\n今日の発表は、AI業界の技術革新が実用段階に入り、様々な産業分野での価値創造が本格化していることを示しています。"
+}
