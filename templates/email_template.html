@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>AI News Summary</title>
+</head>
+<body style="font-family: sans-serif; background-color: #f4f4f4; padding: 20px;">
+  <div style="max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 10px;">
+    <h2 style="color: #2b6cb0;">🧠 AIニュース要約（{{ date }}）</h2>
+    <p><strong>生成日時:</strong> {{ generated_at }}</p>
+
+    <h3>📌 見出し一覧</h3>
+    <ul>
+      {% for item in news_items %}
+        <li>
+          <a href="{{ item.url }}" style="text-decoration: none; color: #1a73e8;">
+            {{ item.title }}
+          </a>
+          <br><small>（{{ item.source }}）</small>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <hr style="margin: 30px 0;">
+
+    <h3>📝 要約</h3>
+    <div style="line-height: 1.6;">
+      {{ summary_html | safe }}
+    </div>
+
+    <hr style="margin: 30px 0;">
+    <p style="font-size: 0.8em; color: gray;">
+      このメールは自動生成されました。<br>
+      <a href="https://github.com/HayatoFunahashi/ai_news">GitHubで確認する</a>
+    </p>
+  </div>
+</body>
+</html>

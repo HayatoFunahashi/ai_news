@@ -13,6 +13,7 @@ import markdown2
 from dotenv import load_dotenv
 import os
 import sys
+from jinja2 import Environment, FileSystemLoader
 
 @dataclass
 class NewsItem:
@@ -249,31 +250,35 @@ class AINewsCollector:
             print(f"Claude API error: {e}")
             return "要約の生成中にエラーが発生しました。"
     
-    def send_email_summary(self, summary: str, headlines: str, recipient_email: str, 
+    def send_email_summary(self, summary: str, recipient_email: str, 
                           smtp_server: str, smtp_port: int, 
-                          sender_email: str, sender_password: str):
-        """メールで要約を送信"""
+                          sender_email: str, sender_password: str,
+                          news_items: List[NewsItem]):
+        """テンプレートを使ってHTMLメールを送信"""
         try:
+            # Jinja2テンプレート読み込み
+            env = Environment(loader=FileSystemLoader('templates'))
+            template = env.get_template('email_template.html')
+
+            # Markdown要約をHTMLに変換
+            summary_html = markdown2.markdown(summary)
+
+            # テンプレートに渡すデータ
+            html_content = template.render(
+                date=datetime.now().strftime('%Y-%m-%d'),
+                generated_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                news_items=news_items[:20],
+                summary_html=summary_html
+            )
+
+            # メール構築
             msg = MIMEMultipart()
             msg['From'] = sender_email
             msg['To'] = recipient_email
-            msg['Subject'] = f"AI News Summary - {datetime.now().strftime('%Y-%m-%d')}"
-            
-            body = f"""
-## AI関連ニュース要約レポート
+            msg['Subject'] = f"🧠 AI News Summary - {datetime.now().strftime('%Y-%m-%d')}"
+            msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-> 生成日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-{headlines}
-
-{summary}
-
-このメールは自動生成されました。  
-[GitHubリポジトリはこちら]({self.github_url})
-"""
-            html_body = markdown2.markdown(body)
-            msg.attach(MIMEText(html_body, 'html', 'utf-8'))
-            
+            # メール送信
             server = smtplib.SMTP(smtp_server, smtp_port)
             server.starttls()
             server.login(sender_email, sender_password)
@@ -284,12 +289,6 @@ class AINewsCollector:
             
         except Exception as e:
             print(f"メール送信エラー: {e}")
-
-    def format_headlines(self, news_items: List[NewsItem]) -> str:
-        return "\n".join([
-            f"- {item.title} ({item.source})\n  {item.url}"
-            for item in news_items[:20]
-        ])
 
     def run_daily_collection(self, recipient_email: str = None):
         """日次のニュース収集・要約・配信"""
@@ -311,10 +310,7 @@ class AINewsCollector:
             # フィルタリング・重複除去
             filtered_news = self.filter_and_deduplicate(all_news)
             print(f"フィルタリング後: {len(filtered_news)}")
-        
-        # 見出し一覧を作成
-        headlines = self.format_headlines(filtered_news)
-        
+             
         # Claude で要約
         summary = self.summarize_with_claude(filtered_news)
         
@@ -325,7 +321,6 @@ class AINewsCollector:
         with open(f'ai_news_{timestamp}.json', 'w', encoding='utf-8') as f:
             json.dump({
                 'timestamp': timestamp,
-                'headlines': headlines,
                 'summary': summary,
                 'news_count': len(filtered_news),
                 'news_items': [
@@ -355,12 +350,12 @@ class AINewsCollector:
         if recipient_email:
             self.send_email_summary(
                 summary, 
-                headlines,
                 recipient_email,
                 smtp_server,
                 smtp_port,
                 sender_email,
-                sender_password
+                sender_password,
+                filtered_news,
             )
         
         return summary
