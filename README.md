@@ -70,6 +70,7 @@ SMTP_SERVER=smtp.gmail.com
 SMTP_PORT=587
 EMAIL_ADDRESS=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password  # Gmailの場合はアプリパスワード
+RECIPIENT_EMAIL=recipient@example.com  # メール送信先アドレス
 ```
 
 ### 3. 収集対象の設定
@@ -86,7 +87,7 @@ from ai_news_collector import AINewsCollector
 collector = AINewsCollector("your-anthropic-api-key")
 
 # ニュース収集・要約実行
-summary = collector.run_daily_collection("recipient@example.com")
+summary = collector.run_daily_collection()
 print(summary)
 ```
 

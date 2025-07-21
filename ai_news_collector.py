@@ -355,7 +355,7 @@ def main():
         collector = AINewsCollector(ANTHROPIC_API_KEY, test_mode=False)
     
     # ニュース収集・要約実行
-    summary = collector.run_daily_collection("hayato_funahashi@icloud.com" if not test_mode else None)
+    summary = collector.run_daily_collection(os.getenv('RECIPIENT_EMAIL') if not test_mode else None)
     
     print("\n=== 今日のAIニュース要約 ===")
     print(summary)

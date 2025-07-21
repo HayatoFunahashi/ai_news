@@ -34,6 +34,7 @@ SMTP_SERVER=smtp.gmail.com
 SMTP_PORT=587
 EMAIL_ADDRESS=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password
+RECIPIENT_EMAIL=recipient@example.com
 ```
 
 2. Optional News API integration:
@@ -100,7 +101,6 @@ The application includes a test mode to avoid Claude API usage during developmen
 - No CI/CD pipeline setup
 
 ### Current Limitations
-- Hard-coded recipient email in main() function (disabled in test mode)
 - No comprehensive error handling for API rate limits
 - No logging configuration beyond print statements
 - News API integration exists but requires separate API key
@@ -110,3 +110,4 @@ For Gmail SMTP, users need:
 - 2-factor authentication enabled
 - App-specific password (not regular Gmail password)
 - Correct SMTP settings (smtp.gmail.com:587)
+- Recipient email configured via RECIPIENT_EMAIL environment variable
