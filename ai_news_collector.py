@@ -282,7 +282,7 @@ AI関連ニュース要約レポート
         except Exception as e:
             print(f"メール送信エラー: {e}")
 
-    def format_headlines(news_items: List[NewsItem]) -> str:
+    def format_headlines(self, news_items: List[NewsItem]) -> str:
         return "\n".join([
             f"- {item.title} ({item.source})\n  {item.url}"
             for item in news_items[:20]
