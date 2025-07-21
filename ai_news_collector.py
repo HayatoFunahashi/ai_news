@@ -245,7 +245,7 @@ class AINewsCollector:
             print(f"Claude API error: {e}")
             return "要約の生成中にエラーが発生しました。"
     
-    def send_email_summary(self, summary: str, recipient_email: str, 
+    def send_email_summary(self, summary: str, headlines: str, recipient_email: str, 
                           smtp_server: str, smtp_port: int, 
                           sender_email: str, sender_password: str):
         """メールで要約を送信"""
@@ -258,6 +258,10 @@ class AINewsCollector:
             body = f"""
 AI関連ニュース要約レポート
 生成日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+{headlines}
+
+---
 
 {summary}
 
@@ -277,7 +281,13 @@ AI関連ニュース要約レポート
             
         except Exception as e:
             print(f"メール送信エラー: {e}")
-    
+
+    def format_headlines(news_items: List[NewsItem]) -> str:
+        return "\n".join([
+            f"- {item.title} ({item.source})\n  {item.url}"
+            for item in news_items[:20]
+        ])
+
     def run_daily_collection(self, recipient_email: str = None):
         """日次のニュース収集・要約・配信"""
         print(f"ニュース収集開始: {datetime.now()}")
@@ -299,6 +309,9 @@ AI関連ニュース要約レポート
             filtered_news = self.filter_and_deduplicate(all_news)
             print(f"フィルタリング後: {len(filtered_news)}")
         
+        # 見出し一覧を作成
+        headlines = self.format_headlines(filtered_news)
+        
         # Claude で要約
         summary = self.summarize_with_claude(filtered_news)
         
@@ -309,6 +322,7 @@ AI関連ニュース要約レポート
         with open(f'ai_news_{timestamp}.json', 'w', encoding='utf-8') as f:
             json.dump({
                 'timestamp': timestamp,
+                'headlines': headlines,
                 'summary': summary,
                 'news_count': len(filtered_news),
                 'news_items': [
@@ -338,6 +352,7 @@ AI関連ニュース要約レポート
         if recipient_email:
             self.send_email_summary(
                 summary, 
+                headlines,
                 recipient_email,
                 smtp_server,
                 smtp_port,
