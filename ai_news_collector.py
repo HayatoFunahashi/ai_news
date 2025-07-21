@@ -231,7 +231,7 @@ class AINewsCollector:
         
         try:
             message = self.client.messages.create(
-                model="claude-3-7-sonnet-20250219",
+                model="claude-opus-4-20250514", # Claude 3.7 sonetとClaude 4.0 sonetと比較したがopus-4の出力結果が目視で最も良かったため
                 max_tokens=1000,
                 messages=[{
                     "role": "user",
