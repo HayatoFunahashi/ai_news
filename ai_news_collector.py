@@ -215,7 +215,7 @@ class AINewsCollector:
 
 {news_text}
 
-出力形式の例：
+出力形式はマークダウン形式であり以下にしたがってください：
 
 ---
 - タイトル: ◯◯◯
@@ -231,7 +231,6 @@ class AINewsCollector:
 4. 投資家が注目すべきポイント
 
 わかりやすく、具体性のある日本語で簡潔に書いてください。
-出力形式はマークダウン形式に準拠してください．
 """
 
     def summarize_with_claude(self, news_items: List[NewsItem]) -> str:
