@@ -290,7 +290,7 @@ class AINewsCollector:
                     msg = MIMEMultipart()
                     msg['From'] = sender_email
                     msg['To'] = recipient_email
-                    msg['Subject'] = f"🧠 AI News Summary - {datetime.now().strftime('%Y-%m-%d')}"
+                    msg['Subject'] = f"🤖 AI News Summary - {datetime.now().strftime('%Y-%m-%d')}"
                     msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
                     # 個別送信
