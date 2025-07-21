@@ -1,3 +1,4 @@
 .env
 ai_news_*.json
 *.txt
+__pycache__

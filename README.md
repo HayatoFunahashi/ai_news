@@ -14,6 +14,7 @@ AI関連ニュースを自動収集し、投資判断に役立つ要約を生成
 - **テストモード**: 開発・デバッグ用にAPI呼び出しを行わないモード
 - **自動配信**: 複数宛先へのHTMLメール送信とファイル保存による結果配信
 - **データ保存**: JSON形式での構造化データ保存
+- **Webダッシュボード**: GitHub Pagesによる静的Webサイト形式でのニュース閲覧
 
 ## 必要要件
 
@@ -272,6 +273,53 @@ python3 ai_news_collector.py --test
 TEST_MODE=true python3 ai_news_collector.py
 ```
 
+## Webダッシュボード
+
+### 概要
+GitHub Pagesを使用した静的Webサイト形式のダッシュボードで、どこからでもAIニュースを閲覧できます。
+
+### 特徴
+- **📊 リアルタイム表示**: 最新のAIニュースと分析結果
+- **🔍 高度なフィルタリング**: 日付、ソース、企業、キーワード別の検索
+- **📱 レスポンシブデザイン**: デスクトップ・モバイル対応
+- **📈 統計情報**: 総記事数、更新状況、関連企業数
+- **🎯 投資判断支援**: Claude AIによる投資観点での分析
+- **📰 タイムライン表示**: 時系列でのニュース表示
+
+### GitHub Pages設定
+
+1. **リポジトリ設定**
+   ```bash
+   # GitHub Pagesを有効化（リポジトリ設定 > Pages）
+   # Source: GitHub Actions
+   ```
+
+2. **Secretsの設定**（リポジトリ設定 > Secrets and variables > Actions）
+   ```
+   ANTHROPIC_API_KEY=your-anthropic-api-key
+   SMTP_SERVER=smtp.gmail.com
+   SMTP_PORT=587
+   EMAIL_ADDRESS=your-email@gmail.com
+   EMAIL_PASSWORD=your-app-password
+   RECIPIENT_EMAILS=user1@example.com,user2@example.com
+   ```
+
+3. **自動デプロイ**
+   - 毎日8:00（日本時間）に自動実行
+   - 手動実行も可能（Actions タブから "Deploy AI News Dashboard" を選択）
+   - コミット時も自動デプロイ
+
+### URL例
+```
+https://hayatofunahashi.github.io/ai_news/
+```
+
+### 技術スタック
+- **フロントエンド**: HTML5, CSS3, JavaScript (ES6+)
+- **スタイリング**: CSS Grid, Flexbox, FontAwesome アイコン
+- **データ**: JSON API形式での動的データ読み込み
+- **デプロイ**: GitHub Actions + GitHub Pages
+
 ## 追加機能・ツール
 
 ### AI Commit Message Generator
@@ -297,6 +345,8 @@ TEST_MODE=true python3 ai_news_collector.py
 - [x] テストモードの実装（API利用料節約）
 - [x] HTMLメール送信機能の実装
 - [x] AI powered コミットメッセージ生成ツールの追加
+- [x] Webダッシュボードの実装（GitHub Pages対応）
+- [x] GitHub Actions による自動デプロイ機能
 
 ## サポート
 

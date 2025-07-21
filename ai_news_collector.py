@@ -410,6 +410,83 @@ class AINewsCollector:
         
         return summary
 
+    def generate_dashboard_data(self):
+        """ダッシュボード用のJSONデータを生成"""
+        print("ダッシュボード用データを生成中...")
+        
+        # 既存のJSONファイルを検索
+        json_files = []
+        for file in os.listdir('.'):
+            if file.startswith('ai_news_') and file.endswith('.json'):
+                json_files.append(file)
+        
+        if not json_files:
+            print("JSONファイルが見つかりません")
+            return
+        
+        # データを集約
+        all_news_items = []
+        summaries = []
+        
+        for json_file in sorted(json_files):
+            try:
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                # タイムスタンプをより使いやすい形式に変換
+                if 'timestamp' in data:
+                    # YYYYMMDD_HHMMSS -> ISO format
+                    timestamp_str = data['timestamp']
+                    try:
+                        timestamp_dt = datetime.strptime(timestamp_str, '%Y%m%d_%H%M%S')
+                        iso_timestamp = timestamp_dt.isoformat()
+                    except ValueError:
+                        iso_timestamp = timestamp_str
+                else:
+                    iso_timestamp = datetime.now().isoformat()
+                
+                # ニュース項目を追加
+                if 'news_items' in data:
+                    for item in data['news_items']:
+                        # 重複チェック（URLベース）
+                        if not any(existing['url'] == item['url'] for existing in all_news_items):
+                            all_news_items.append(item)
+                
+                # サマリーを追加
+                summary_item = {
+                    'timestamp': iso_timestamp,
+                    'summary': data.get('summary', ''),
+                    'news_count': data.get('news_count', 0),
+                    'headlines': data.get('headlines', '')
+                }
+                summaries.append(summary_item)
+                
+            except Exception as e:
+                print(f"ファイル {json_file} の処理でエラー: {e}")
+        
+        # 集約データを作成
+        aggregated_data = {
+            'generated_at': datetime.now().isoformat(),
+            'total_summaries': len(summaries),
+            'total_news_items': len(all_news_items),
+            'news_items': sorted(all_news_items, key=lambda x: x['published'], reverse=True),
+            'summaries': sorted(summaries, key=lambda x: x['timestamp'], reverse=True)
+        }
+        
+        # docsディレクトリが存在しない場合は作成
+        os.makedirs('docs/data', exist_ok=True)
+        
+        # 集約データを保存
+        output_file = 'docs/data/aggregated_news.json'
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(aggregated_data, f, ensure_ascii=False, indent=2)
+        
+        print(f"ダッシュボードデータを生成しました: {output_file}")
+        print(f"- サマリー数: {len(summaries)}")
+        print(f"- ニュース項目数: {len(all_news_items)}")
+        
+        return output_file
+
 
 def parse_recipient_emails(email_env_var: str) -> List[str]:
     """環境変数から複数のメールアドレスをパースする（カンマ区切り対応）"""
@@ -458,6 +535,9 @@ def main():
     
     # ニュース収集・要約実行
     summary = collector.run_daily_collection(recipient_emails)
+    
+    # ダッシュボード用データを生成
+    collector.generate_dashboard_data()
     
     print("\n=== 今日のAIニュース要約 ===")
     print(summary)

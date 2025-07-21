@@ -1,0 +1,118 @@
+name: Deploy AI News Dashboard
+
+on:
+  schedule:
+    # 毎日 日本時間 8:00 (UTC 23:00) に実行
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+    # 手動実行も可能
+  push:
+    branches: [ main ]
+    paths:
+      - 'ai_news_*.json'
+      - 'docs/**'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  collect-and-generate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests feedparser anthropic python-dotenv markdown2 jinja2
+        
+    - name: Run AI news collection
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+        SMTP_PORT: ${{ secrets.SMTP_PORT }}
+        EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
+      run: |
+        python ai_news_collector.py
+        
+    - name: Generate dashboard data
+      run: |
+        python -c "
+        from ai_news_collector import AINewsCollector
+        collector = AINewsCollector('dummy', test_mode=True)
+        collector.generate_dashboard_data()
+        "
+        
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+      
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./docs
+        
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v3
+
+  # テスト用のジョブ（実際のAPI呼び出しなし）  
+  test-generation:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests feedparser anthropic python-dotenv markdown2 jinja2
+        
+    - name: Test dashboard data generation
+      run: |
+        # テストモードでダッシュボードデータを生成
+        python -c "
+        from ai_news_collector import AINewsCollector
+        collector = AINewsCollector('', test_mode=True)
+        summary = collector.run_daily_collection()
+        collector.generate_dashboard_data()
+        print('✅ Dashboard generation test passed')
+        "
+        
+    - name: Verify generated files
+      run: |
+        if [ -f "docs/data/aggregated_news.json" ]; then
+          echo "✅ aggregated_news.json generated successfully"
+          echo "File size: $(wc -c < docs/data/aggregated_news.json) bytes"
+        else
+          echo "❌ aggregated_news.json not found"
+          exit 1
+        fi
+        
+        if [ -f "docs/index.html" ]; then
+          echo "✅ index.html exists"
+        else
+          echo "❌ index.html not found"
+          exit 1
+        fi

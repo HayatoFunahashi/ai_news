@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 AI News Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-robot"></i> AI News Dashboard</h1>
+            <p class="subtitle">Investment-focused AI news analysis powered by Claude</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Filters Section -->
+        <section class="filters">
+            <div class="filter-group">
+                <label for="dateFilter"><i class="fas fa-calendar"></i> 期間</label>
+                <select id="dateFilter">
+                    <option value="all">全期間</option>
+                    <option value="today">今日</option>
+                    <option value="week">過去7日</option>
+                    <option value="month">過去30日</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="sourceFilter"><i class="fas fa-newspaper"></i> ソース</label>
+                <select id="sourceFilter">
+                    <option value="all">すべて</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="companyFilter"><i class="fas fa-building"></i> 企業</label>
+                <select id="companyFilter">
+                    <option value="all">すべて</option>
+                    <option value="OpenAI">OpenAI</option>
+                    <option value="Google">Google</option>
+                    <option value="Microsoft">Microsoft</option>
+                    <option value="Apple">Apple</option>
+                    <option value="NVIDIA">NVIDIA</option>
+                    <option value="Meta">Meta</option>
+                    <option value="Amazon">Amazon</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="keywordSearch"><i class="fas fa-search"></i> キーワード検索</label>
+                <input type="text" id="keywordSearch" placeholder="キーワードを入力...">
+            </div>
+            
+            <button id="clearFilters" class="btn-clear">
+                <i class="fas fa-times"></i> フィルターをクリア
+            </button>
+        </section>
+
+        <!-- Statistics Section -->
+        <section class="stats">
+            <div class="stat-card">
+                <i class="fas fa-newspaper"></i>
+                <h3 id="totalNews">-</h3>
+                <p>総記事数</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-calendar-check"></i>
+                <h3 id="recentUpdates">-</h3>
+                <p>直近更新数</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-building"></i>
+                <h3 id="uniqueCompanies">-</h3>
+                <p>関連企業数</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock"></i>
+                <h3 id="lastUpdate">-</h3>
+                <p>最終更新</p>
+            </div>
+        </section>
+
+        <!-- News Timeline Section -->
+        <section class="timeline">
+            <h2><i class="fas fa-timeline"></i> ニュースタイムライン</h2>
+            <div id="newsTimeline" class="news-list">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> データを読み込み中...
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Section -->
+        <section class="summary-section">
+            <h2><i class="fas fa-chart-line"></i> AI分析サマリー</h2>
+            <div id="summaryContainer" class="summary-list">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> サマリーを読み込み中...
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>
+                <i class="fas fa-robot"></i> Powered by Claude AI | 
+                <a href="https://github.com/HayatoFunahashi/ai_news" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </p>
+            <p class="disclaimer">
+                投資判断支援ツールであり、投資助言を提供するものではありません。投資は自己責任で行ってください。
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
