@@ -11,6 +11,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 import os
+import sys
 
 @dataclass
 class NewsItem:
@@ -21,8 +22,12 @@ class NewsItem:
     source: str
 
 class AINewsCollector:
-    def __init__(self, anthropic_api_key: str):
-        self.client = anthropic.Anthropic(api_key=anthropic_api_key)
+    def __init__(self, anthropic_api_key: str, test_mode: bool = False):
+        self.test_mode = test_mode
+        if not test_mode:
+            self.client = anthropic.Anthropic(api_key=anthropic_api_key)
+        else:
+            self.client = None
         
         # AI関連のRSSフィードとニュースソース
         self.rss_feeds = [
@@ -154,8 +159,38 @@ class AINewsCollector:
         # 日付順でソート（新しい順）
         return sorted(filtered_items, key=lambda x: x.published, reverse=True)
     
+    def load_test_data(self) -> tuple[List[NewsItem], str]:
+        """テスト用データを読み込み"""
+        try:
+            with open('test_data.json', 'r', encoding='utf-8') as f:
+                test_data = json.load(f)
+            
+            # テスト用NewsItemsを作成
+            test_items = []
+            for item_data in test_data['test_news_items']:
+                news_item = NewsItem(
+                    title=item_data['title'],
+                    url=item_data['url'],
+                    published=datetime.fromisoformat(item_data['published']),
+                    content=item_data['content'],
+                    source=item_data['source']
+                )
+                test_items.append(news_item)
+            
+            return test_items, test_data['expected_summary']
+            
+        except Exception as e:
+            print(f"テストデータの読み込みエラー: {e}")
+            return [], "テストデータが利用できません。"
+    
     def summarize_with_claude(self, news_items: List[NewsItem]) -> str:
-        """Claudeを使ってニュースを要約"""
+        """Claudeを使ってニュースを要約（テストモード対応）"""
+        if self.test_mode:
+            # テストモード：固定の要約を返す
+            _, test_summary = self.load_test_data()
+            print("[TEST MODE] 固定の要約を使用しています")
+            return test_summary
+        
         if not news_items:
             return "今日はAI関連の重要なニュースはありませんでした。"
         
@@ -235,16 +270,22 @@ AI関連ニュース要約レポート
         """日次のニュース収集・要約・配信"""
         print(f"ニュース収集開始: {datetime.now()}")
         
-        # ニュース収集
-        rss_news = self.collect_rss_news()
-        api_news = self.collect_news_api()
-        all_news = rss_news + api_news
-        
-        print(f"収集したニュース数: {len(all_news)}")
-        
-        # フィルタリング・重複除去
-        filtered_news = self.filter_and_deduplicate(all_news)
-        print(f"フィルタリング後: {len(filtered_news)}")
+        if self.test_mode:
+            # テストモード：テストデータを使用
+            print("[TEST MODE] テストデータを使用しています")
+            filtered_news, _ = self.load_test_data()
+            print(f"テストニュース数: {len(filtered_news)}")
+        else:
+            # 本番モード：実際のニュース収集
+            rss_news = self.collect_rss_news()
+            api_news = self.collect_news_api()
+            all_news = rss_news + api_news
+            
+            print(f"収集したニュース数: {len(all_news)}")
+            
+            # フィルタリング・重複除去
+            filtered_news = self.filter_and_deduplicate(all_news)
+            print(f"フィルタリング後: {len(filtered_news)}")
         
         # Claude で要約
         summary = self.summarize_with_claude(filtered_news)
@@ -299,14 +340,23 @@ AI関連ニュース要約レポート
 # 使用例
 def main():
     load_dotenv()  # .envファイルから環境変数を読み込む
-    # API Key設定
-    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
     
-    # インスタンス作成
-    collector = AINewsCollector(ANTHROPIC_API_KEY)
+    # テストモードの判定（環境変数またはコマンドライン引数）
+    test_mode = os.getenv("TEST_MODE", "false").lower() == "true" or "--test" in sys.argv
+    
+    if test_mode:
+        print("=== テストモードで実行中 ===")
+        collector = AINewsCollector("", test_mode=True)
+    else:
+        # API Key設定
+        ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+        if not ANTHROPIC_API_KEY:
+            print("エラー: ANTHROPIC_API_KEYが設定されていません")
+            return
+        collector = AINewsCollector(ANTHROPIC_API_KEY, test_mode=False)
     
     # ニュース収集・要約実行
-    summary = collector.run_daily_collection("hayato_funahashi@icloud.com")
+    summary = collector.run_daily_collection("hayato_funahashi@icloud.com" if not test_mode else None)
     
     print("\n=== 今日のAIニュース要約 ===")
     print(summary)

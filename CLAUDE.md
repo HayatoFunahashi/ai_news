@@ -10,7 +10,14 @@ This is an AI news collection and summarization system that automatically gather
 
 ### Running the Application
 ```bash
-python ai_news_collector.py
+# Normal mode (requires API key)
+python3 ai_news_collector.py
+
+# Test mode (no API calls, uses test data)
+python3 ai_news_collector.py --test
+
+# Test mode via environment variable
+TEST_MODE=true python3 ai_news_collector.py
 ```
 
 ### Installing Dependencies
@@ -71,6 +78,19 @@ NEWS_API_KEY=your-news-api-key
 - `REAME.md`: Comprehensive documentation (note: typo in filename)
 - `.env`: Environment configuration (git-ignored)
 
+## Test Mode
+
+The application includes a test mode to avoid Claude API usage during development:
+
+### Test Data Structure
+- `test_data.json`: Contains sample news items and expected summary
+- Test mode uses fixed test data instead of fetching real news
+- Returns pre-defined summary without API calls
+
+### Activation Methods
+1. Command line: `--test` flag
+2. Environment variable: `TEST_MODE=true`
+
 ## Important Notes
 
 ### Missing Development Infrastructure
@@ -80,7 +100,7 @@ NEWS_API_KEY=your-news-api-key
 - No CI/CD pipeline setup
 
 ### Current Limitations
-- Hard-coded recipient email in main() function
+- Hard-coded recipient email in main() function (disabled in test mode)
 - No comprehensive error handling for API rate limits
 - No logging configuration beyond print statements
 - News API integration exists but requires separate API key
