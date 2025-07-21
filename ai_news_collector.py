@@ -289,7 +289,6 @@ AI関連ニュース要約レポート
         
         # Claude で要約
         summary = self.summarize_with_claude(filtered_news)
-        # summary = ""
         
         # 結果を保存
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
