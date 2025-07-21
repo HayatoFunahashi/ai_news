@@ -52,7 +52,7 @@ NEWS_API_KEY=your-news-api-key
 - **Collection Phase**: `collect_rss_news()` and `collect_news_api()` gather news from multiple sources
 - **Processing Phase**: `filter_and_deduplicate()` applies AI keyword filtering and removes duplicates
 - **Analysis Phase**: `summarize_with_claude()` generates investment-focused summaries using Claude API
-- **Distribution Phase**: `send_email_summary()` handles HTML email delivery using Jinja2 templates and file output
+- **Distribution Phase**: `send_email_summary()` handles HTML email delivery to multiple recipients using Jinja2 templates and file output
 - **Test Phase**: `load_test_data()` loads test data from `test_data.json` for development testing
 
 ### Data Flow
@@ -109,10 +109,12 @@ The application includes a test mode to avoid Claude API usage during developmen
 ### Current Features & Limitations
 **Features:**
 - HTML email generation with Jinja2 templates
+- Multiple recipient email support with individual sending
 - Test mode for development without API calls
 - Investment-focused AI analysis using Claude Opus 4
 - Multi-source news collection (RSS + News API)
 - Conventional commit message generation tool
+- Backward compatibility for single recipient configuration
 
 **Limitations:**
 - No comprehensive error handling for API rate limits
@@ -124,8 +126,16 @@ For Gmail SMTP, users need:
 - 2-factor authentication enabled
 - App-specific password (not regular Gmail password)
 - Correct SMTP settings (smtp.gmail.com:587)
-- Recipient email configured via RECIPIENT_EMAIL environment variable
+- Multiple recipient emails configured via RECIPIENT_EMAILS environment variable (comma-separated)
+- Backward compatibility: single recipient via RECIPIENT_EMAIL still supported
 - HTML email template at `templates/email_template.html` (Jinja2 format)
+
+#### Multiple Recipients Support
+- Environment variable: `RECIPIENT_EMAILS=user1@example.com,user2@example.com,user3@example.com`
+- Individual email sending (no CC/BCC - privacy protection)
+- Automatic error handling per recipient
+- Invalid email format detection and skipping
+- Efficient SMTP connection reuse
 
 ### Tools Directory
 - `tools/ai_commit.sh`: Bash script for AI-powered commit message generation

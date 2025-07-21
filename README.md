@@ -12,7 +12,7 @@ AI関連ニュースを自動収集し、投資判断に役立つ要約を生成
 - **インテリジェントフィルタリング**: AI関連キーワードによる記事の絞り込みと重複除去
 - **AI要約**: Claude APIを使用した投資観点での要約生成
 - **テストモード**: 開発・デバッグ用にAPI呼び出しを行わないモード
-- **自動配信**: メール送信とファイル保存による結果配信
+- **自動配信**: 複数宛先へのHTMLメール送信とファイル保存による結果配信
 - **データ保存**: JSON形式での構造化データ保存
 
 ## 必要要件
@@ -70,7 +70,13 @@ SMTP_SERVER=smtp.gmail.com
 SMTP_PORT=587
 EMAIL_ADDRESS=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password  # Gmailの場合はアプリパスワード
-RECIPIENT_EMAIL=recipient@example.com  # メール送信先アドレス
+
+# メール送信先アドレス（複数指定可能）
+# 複数の場合はカンマ区切りで指定
+RECIPIENT_EMAILS=recipient1@example.com,recipient2@example.com,recipient3@example.com
+
+# または単一の場合（後方互換性のため）
+# RECIPIENT_EMAIL=recipient@example.com
 ```
 
 ### 3. 収集対象の設定
@@ -83,7 +89,24 @@ RECIPIENT_EMAIL=recipient@example.com  # メール送信先アドレス
 - OpenAI Blog
 - DeepMind Blog
 
-### 4. HTMLメールテンプレート
+### 4. 複数受信者の設定
+メール送信は複数の宛先に対応しています：
+
+```bash
+# 複数のメールアドレスをカンマ区切りで設定
+RECIPIENT_EMAILS=investor1@company.com,analyst@firm.com,researcher@university.edu
+
+# スペースがあっても自動でトリミングされます
+RECIPIENT_EMAILS=user1@example.com, user2@example.com, user3@example.com
+```
+
+**特徴:**
+- 各受信者に個別にメール送信（プライバシー保護）
+- 送信失敗した宛先も個別に報告
+- SMTP接続は一度だけ確立して効率化
+- 無効なメールアドレス形式は自動でスキップ
+
+### 5. HTMLメールテンプレート
 メール送信機能では`templates/email_template.html`のJinja2テンプレートを使用してHTMLメールを生成します。
 
 ## 使用方法
@@ -91,12 +114,16 @@ RECIPIENT_EMAIL=recipient@example.com  # メール送信先アドレス
 ### 基本的な使用方法
 
 ```python
-from ai_news_collector import AINewsCollector
+from ai_news_collector import AINewsCollector, parse_recipient_emails
 
 # インスタンス作成
 collector = AINewsCollector("your-anthropic-api-key")
 
-# ニュース収集・要約実行
+# 複数の受信者にメール送信する場合
+recipient_emails = ["user1@example.com", "user2@example.com"]
+summary = collector.run_daily_collection(recipient_emails)
+
+# または環境変数から自動取得（推奨）
 summary = collector.run_daily_collection()
 print(summary)
 ```
