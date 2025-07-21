@@ -24,6 +24,32 @@ class NewsItem:
     source: str
 
 class AINewsCollector:
+    # クラス定数
+    DEFAULT_RSS_FEEDS = [
+        "https://feeds.feedburner.com/venturebeat/SZYF",  # VentureBeat AI
+        "https://www.artificialintelligence-news.com/feed/",  # AI News
+        "https://feeds.feedburner.com/oreilly/radar/atom",  # O'Reilly Radar
+        "https://blog.openai.com/rss.xml",  # OpenAI Blog
+        "https://deepmind.com/blog/feed/basic/",  # DeepMind
+    ]
+    
+    NEWS_API_KEYWORDS = [
+        "artificial intelligence", "machine learning", "deep learning",
+        "ChatGPT", "OpenAI", "Google AI", "Microsoft AI", "NVIDIA AI"
+    ]
+    
+    AI_FILTER_KEYWORDS = [
+        'AI', 'artificial intelligence', 'machine learning', 'deep learning',
+        'neural network', 'ChatGPT', 'OpenAI', 'Google AI', 'Microsoft AI',
+        'NVIDIA', 'autonomous', 'computer vision', 'natural language processing',
+        'LLM', 'large language model', 'generative AI', 'AGI'
+    ]
+    
+    CLAUDE_MODEL = "claude-opus-4-20250514"
+    MAX_NEWS_ITEMS_FOR_SUMMARY = 20
+    NEWS_API_PAGE_SIZE = 20
+    NEWS_API_RATE_LIMIT_DELAY = 1  # seconds
+    
     def __init__(self, anthropic_api_key: str, test_mode: bool = False):
         self.test_mode = test_mode
         if not test_mode:
@@ -31,37 +57,35 @@ class AINewsCollector:
         else:
             self.client = None
         
-        # AI関連のRSSフィードとニュースソース
-        self.rss_feeds = [
-            "https://feeds.feedburner.com/venturebeat/SZYF",  # VentureBeat AI
-            "https://www.artificialintelligence-news.com/feed/",  # AI News
-            "https://feeds.feedburner.com/oreilly/radar/atom",  # O'Reilly Radar
-            "https://blog.openai.com/rss.xml",  # OpenAI Blog
-            "https://deepmind.com/blog/feed/basic/",  # DeepMind
-        ]
-        
-        # ニュースAPI（例：NewsAPI）
+        # インスタンス変数
+        self.rss_feeds = self.DEFAULT_RSS_FEEDS.copy()
         self.news_api_key = None  # NewsAPIのキーを設定
-        # GitHubのWebページ
         self.github_url = "https://github.com/HayatoFunahashi/ai_news"
+
+    def _parse_date(self, entry) -> datetime:
+        """RSS entryから日付を解析"""
+        if hasattr(entry, 'published_parsed'):
+            return datetime(*entry.published_parsed[:6])
+        else:
+            return datetime.now()
+
+    def _is_within_timeframe(self, pub_date: datetime, hours_back: int) -> bool:
+        """指定された時間内かどうかをチェック"""
+        cutoff_time = datetime.now() - timedelta(hours=hours_back)
+        return pub_date > cutoff_time
         
     def collect_rss_news(self, hours_back: int = 24) -> List[NewsItem]:
         """RSSフィードからニュースを収集"""
         news_items = []
-        cutoff_time = datetime.now() - timedelta(hours=hours_back)
         
         for feed_url in self.rss_feeds:
             try:
                 feed = feedparser.parse(feed_url)
                 
                 for entry in feed.entries:
-                    # 日付解析
-                    if hasattr(entry, 'published_parsed'):
-                        pub_date = datetime(*entry.published_parsed[:6])
-                    else:
-                        pub_date = datetime.now()
+                    pub_date = self._parse_date(entry)
                     
-                    if pub_date > cutoff_time:
+                    if self._is_within_timeframe(pub_date, hours_back):
                         content = entry.get('summary', entry.get('description', ''))
                         
                         news_item = NewsItem(
@@ -86,16 +110,7 @@ class AINewsCollector:
         news_items = []
         
         # AI関連のキーワード
-        keywords = [
-            "artificial intelligence",
-            "machine learning", 
-            "deep learning",
-            "ChatGPT",
-            "OpenAI",
-            "Google AI",
-            "Microsoft AI",
-            "NVIDIA AI"
-        ]
+        keywords = self.NEWS_API_KEYWORDS
         
         from_date = (datetime.now() - timedelta(hours=hours_back)).strftime('%Y-%m-%d')
         
@@ -108,7 +123,7 @@ class AINewsCollector:
                     'sortBy': 'publishedAt',
                     'language': 'en',
                     'apiKey': self.news_api_key,
-                    'pageSize': 20
+                    'pageSize': self.NEWS_API_PAGE_SIZE
                 }
                 
                 response = requests.get(url, params=params)
@@ -128,7 +143,7 @@ class AINewsCollector:
                     )
                     news_items.append(news_item)
                     
-                time.sleep(1)  # API制限対策
+                time.sleep(self.NEWS_API_RATE_LIMIT_DELAY)  # API制限対策
                 
             except Exception as e:
                 print(f"Error collecting news for keyword '{keyword}': {e}")
@@ -138,12 +153,7 @@ class AINewsCollector:
     def filter_and_deduplicate(self, news_items: List[NewsItem]) -> List[NewsItem]:
         """ニュースのフィルタリングと重複除去"""
         # AI関連キーワードでフィルタリング
-        ai_keywords = [
-            'AI', 'artificial intelligence', 'machine learning', 'deep learning',
-            'neural network', 'ChatGPT', 'OpenAI', 'Google AI', 'Microsoft AI',
-            'NVIDIA', 'autonomous', 'computer vision', 'natural language processing',
-            'LLM', 'large language model', 'generative AI', 'AGI'
-        ]
+        ai_keywords = self.AI_FILTER_KEYWORDS
         
         filtered_items = []
         seen_titles = set()
@@ -187,27 +197,17 @@ class AINewsCollector:
             print(f"テストデータの読み込みエラー: {e}")
             return [], "テストデータが利用できません。"
     
-    def summarize_with_claude(self, news_items: List[NewsItem]) -> str:
-        """Claudeを使ってニュースを要約（テストモード対応）"""
-        if self.test_mode:
-            # テストモード：固定の要約を返す
-            _, test_summary = self.load_test_data()
-            print("[TEST MODE] 固定の要約を使用しています")
-            return test_summary
-        
-        if not news_items:
-            return "今日はAI関連の重要なニュースはありませんでした。"
-        
-        # ニュース情報を整理
+    def _create_summary_prompt(self, news_items: List[NewsItem]) -> str:
+        """要約用のプロンプトを作成"""
         news_text = "\n\n".join([
             f"タイトル: {item.title}\n"
             f"ソース: {item.source}\n"
             f"内容: {item.content}\n"
             f"URL: {item.url}"
-            for item in news_items[:20]  # 上位20件のみ
+            for item in news_items[:self.MAX_NEWS_ITEMS_FOR_SUMMARY]
         ])
         
-        prompt = f"""
+        return f"""
 "あなたはAI関連の経済ニュースを分析するアナリストです。"
 "投資家が素早く判断できるよう、複数記事の要点を簡潔に、かつ出典を含めて整理してください。\n\n"        
 以下のAI関連ニュースを分析して、投資判断に役立つ要約を作成してください。
@@ -233,10 +233,23 @@ class AINewsCollector:
 わかりやすく、具体性のある日本語で簡潔に書いてください。
 出力形式はマークダウン形式に準拠してください．
 """
+
+    def summarize_with_claude(self, news_items: List[NewsItem]) -> str:
+        """Claudeを使ってニュースを要約（テストモード対応）"""
+        if self.test_mode:
+            # テストモード：固定の要約を返す
+            _, test_summary = self.load_test_data()
+            print("[TEST MODE] 固定の要約を使用しています")
+            return test_summary
+        
+        if not news_items:
+            return "今日はAI関連の重要なニュースはありませんでした。"
+        
+        prompt = self._create_summary_prompt(news_items)
         
         try:
             message = self.client.messages.create(
-                model="claude-opus-4-20250514", # Claude 3.7 sonetとClaude 4.0 sonetと比較したがopus-4の出力結果が目視で最も良かったため
+                model=self.CLAUDE_MODEL,
                 max_tokens=1000,
                 messages=[{
                     "role": "user",
@@ -250,6 +263,22 @@ class AINewsCollector:
             print(f"Claude API error: {e}")
             return "要約の生成中にエラーが発生しました。"
     
+    def _create_html_content(self, summary: str, news_items: List[NewsItem]) -> str:
+        """HTMLメールのコンテンツを生成"""
+        env = Environment(loader=FileSystemLoader('templates'))
+        template = env.get_template('email_template.html')
+
+        # Markdown要約をHTMLに変換
+        summary_html = markdown2.markdown(summary)
+
+        # テンプレートに渡すデータ
+        return template.render(
+            date=datetime.now().strftime('%Y-%m-%d'),
+            generated_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            news_items=news_items[:self.MAX_NEWS_ITEMS_FOR_SUMMARY],
+            summary_html=summary_html
+        )
+
     def send_email_summary(self, summary: str, recipient_emails: List[str], 
                           smtp_server: str, smtp_port: int, 
                           sender_email: str, sender_password: str,
@@ -260,20 +289,7 @@ class AINewsCollector:
             return
             
         try:
-            # Jinja2テンプレート読み込み
-            env = Environment(loader=FileSystemLoader('templates'))
-            template = env.get_template('email_template.html')
-
-            # Markdown要約をHTMLに変換
-            summary_html = markdown2.markdown(summary)
-
-            # テンプレートに渡すデータ
-            html_content = template.render(
-                date=datetime.now().strftime('%Y-%m-%d'),
-                generated_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                news_items=news_items[:20],
-                summary_html=summary_html
-            )
+            html_content = self._create_html_content(summary, news_items)
 
             # SMTP接続を一度だけ確立
             server = smtplib.SMTP(smtp_server, smtp_port)
@@ -311,15 +327,13 @@ class AINewsCollector:
         except Exception as e:
             print(f"メール送信エラー (SMTP接続): {e}")
 
-    def run_daily_collection(self, recipient_emails: List[str] = None):
-        """日次のニュース収集・要約・配信"""
-        print(f"ニュース収集開始: {datetime.now()}")
-        
+    def _collect_all_news(self) -> List[NewsItem]:
+        """全ニュースソースから記事を収集"""
         if self.test_mode:
-            # テストモード：テストデータを使用
             print("[TEST MODE] テストデータを使用しています")
             filtered_news, _ = self.load_test_data()
             print(f"テストニュース数: {len(filtered_news)}")
+            return filtered_news
         else:
             # 本番モード：実際のニュース収集
             rss_news = self.collect_rss_news()
@@ -331,52 +345,68 @@ class AINewsCollector:
             # フィルタリング・重複除去
             filtered_news = self.filter_and_deduplicate(all_news)
             print(f"フィルタリング後: {len(filtered_news)}")
-             
-        # Claude で要約
-        summary = self.summarize_with_claude(filtered_news)
-        
-        # 結果を保存
+            return filtered_news
+
+    def _save_results(self, filtered_news: List[NewsItem], summary: str) -> str:
+        """結果をファイルに保存"""
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
         # JSON形式で保存
+        json_data = {
+            'timestamp': timestamp,
+            'summary': summary,
+            'news_count': len(filtered_news),
+            'news_items': [
+                {
+                    'title': item.title,
+                    'url': item.url,
+                    'published': item.published.isoformat(),
+                    'source': item.source
+                }
+                for item in filtered_news
+            ]
+        }
+        
         with open(f'ai_news_{timestamp}.json', 'w', encoding='utf-8') as f:
-            json.dump({
-                'timestamp': timestamp,
-                'summary': summary,
-                'news_count': len(filtered_news),
-                'news_items': [
-                    {
-                        'title': item.title,
-                        'url': item.url,
-                        'published': item.published.isoformat(),
-                        'source': item.source
-                    }
-                    for item in filtered_news
-                ]
-            }, f, ensure_ascii=False, indent=2)
+            json.dump(json_data, f, ensure_ascii=False, indent=2)
         
         # テキスト形式で保存
         with open(f'ai_news_summary_{timestamp}.txt', 'w', encoding='utf-8') as f:
             f.write(summary)
         
         print("ファイル保存完了")
-        
-        # メール設定の読み込み
-        smtp_server = os.getenv('SMTP_SERVER')
-        smtp_port = int(os.getenv('SMTP_PORT', '587'))
-        sender_email = os.getenv('EMAIL_ADDRESS')
-        sender_password = os.getenv('EMAIL_PASSWORD')
+        return timestamp
 
+    def _get_email_settings(self) -> Dict[str, any]:
+        """メール設定を環境変数から取得"""
+        return {
+            'smtp_server': os.getenv('SMTP_SERVER'),
+            'smtp_port': int(os.getenv('SMTP_PORT', '587')),
+            'sender_email': os.getenv('EMAIL_ADDRESS'),
+            'sender_password': os.getenv('EMAIL_PASSWORD')
+        }
+
+    def run_daily_collection(self, recipient_emails: List[str] = None):
+        """日次のニュース収集・要約・配信"""
+        print(f"ニュース収集開始: {datetime.now()}")
+        
+        # ニュース収集
+        filtered_news = self._collect_all_news()
+             
+        # Claude で要約
+        summary = self.summarize_with_claude(filtered_news)
+        
+        # 結果をファイルに保存
+        self._save_results(filtered_news, summary)
+        
         # メール送信（設定されている場合）
         if recipient_emails and len(recipient_emails) > 0:
+            email_settings = self._get_email_settings()
             self.send_email_summary(
                 summary, 
                 recipient_emails,
-                smtp_server,
-                smtp_port,
-                sender_email,
-                sender_password,
-                filtered_news,
+                **email_settings,
+                news_items=filtered_news
             )
         
         return summary
