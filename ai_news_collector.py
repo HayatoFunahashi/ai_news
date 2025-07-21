@@ -318,7 +318,7 @@ AI関連ニュース要約レポート
         
         # メール設定の読み込み
         smtp_server = os.getenv('SMTP_SERVER')
-        smtp_port = int(os.getenv('SMTP_PORT'))
+        smtp_port = int(os.getenv('SMTP_PORT', '587'))
         sender_email = os.getenv('EMAIL_ADDRESS')
         sender_password = os.getenv('EMAIL_PASSWORD')
 
