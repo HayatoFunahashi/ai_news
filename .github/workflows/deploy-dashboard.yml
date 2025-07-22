@@ -109,14 +109,7 @@ jobs:
         if [ -f "docs/data/aggregated_news.json" ]; then
           echo "✅ aggregated_news.json exists"
           echo "📊 Data summary:"
-          python << 'EOF'
-          import json
-          with open('docs/data/aggregated_news.json', 'r') as f:
-              data = json.load(f)
-          print(f'  - Total summaries: {data.get("total_summaries", 0)}')
-          print(f'  - Total news items: {data.get("total_news_items", 0)}')
-          print(f'  - Generated at: {data.get("generated_at", "N/A")}')
-          EOF
+          python -c "import json; data=json.load(open('docs/data/aggregated_news.json')); print(f'  - Total summaries: {data.get(\"total_summaries\", 0)}'); print(f'  - Total news items: {data.get(\"total_news_items\", 0)}'); print(f'  - Generated at: {data.get(\"generated_at\", \"N/A\")}')"
         else
           echo "❌ aggregated_news.json missing"
           exit 1
