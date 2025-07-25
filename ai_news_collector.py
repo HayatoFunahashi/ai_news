@@ -384,6 +384,77 @@ class AINewsCollector:
             'sender_email': os.getenv('EMAIL_ADDRESS'),
             'sender_password': os.getenv('EMAIL_PASSWORD')
         }
+    
+    def summarize_single_news(self, item: NewsItem) -> str:
+        """Claudeで1記事を要約"""
+        prompt = f"""
+    以下のAI関連ニュースについて、要点を3行程度で簡潔にまとめてください。日本語で、出典とURLも明示してください。
+
+    ---
+    タイトル: {item.title}
+    ソース: {item.source}
+    内容: {item.content}
+    URL: {item.url}
+    ---
+    """
+        try:
+            response = self.client.messages.create(
+                model=self.CLAUDE_MODEL,
+                max_tokens=500,
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }]
+            )
+            return response.content[0].text.strip()
+        except Exception as e:
+            print(f"[ERROR] 要約失敗: {item.title} : {e}")
+            return f"要約エラー: {item.title}"
+
+    def summarize_all_individually(self, news_items: List[NewsItem]) -> List[str]:
+        """すべてのニュースを個別に要約"""
+        return [self.summarize_single_news(item) for item in news_items]
+
+    def summarize_overall(self, individual_summaries: List[str]) -> str:
+        """全体要約をClaudeで生成"""
+        combined_text = "\n\n".join(individual_summaries)
+        prompt = f"""
+    あなたはAIに詳しい投資アナリストです。
+    以下は個別に要約されたAI関連ニュースです。この要約をもとに、全体の動向や注目すべきポイントを投資家向けに簡潔にまとめてください。
+
+    出力形式は以下に従ってください：
+    ---
+    - トレンド: ◯◯
+    - 注目企業: ◯◯
+    - 技術的ポイント: ◯◯
+    - 投資判断へのヒント: ◯◯
+    ---
+
+    以下が個別要約です：
+
+    {combined_text}
+    """
+        try:
+            response = self.client.messages.create(
+                model=self.CLAUDE_MODEL,
+                max_tokens=1000,
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }]
+            )
+            return response.content[0].text.strip()
+        except Exception as e:
+            print(f"[ERROR] 全体要約失敗: {e}")
+            return "全体要約エラー"
+
+    def run_summarization_pipeline(self, news_items: List[NewsItem]) -> str:
+        """個別要約→統合要約パイプライン"""
+        print(f"▶ 個別要約中... 記事数: {len(news_items)}")
+        individual_summaries = self.summarize_all_individually(news_items)
+        print(f"▶ 全体要約を生成中...")
+        overall_summary = self.summarize_overall(individual_summaries)
+        return overall_summary
 
     def run_daily_collection(self, recipient_emails: List[str] = None):
         """日次のニュース収集・要約・配信"""
@@ -393,7 +464,8 @@ class AINewsCollector:
         filtered_news = self._collect_all_news()
              
         # Claude で要約
-        summary = self.summarize_with_claude(filtered_news)
+        # summary = self.summarize_with_claude(filtered_news)
+        summary = self.run_summarization_pipeline(filtered_news)
         
         # 結果をファイルに保存
         self._save_results(filtered_news, summary)
