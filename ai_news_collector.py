@@ -2,18 +2,14 @@ import requests
 import feedparser
 import json
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import List
 import time
 from dataclasses import dataclass
 import anthropic
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import markdown2
 from dotenv import load_dotenv
 import os
 import sys
-from jinja2 import Environment, FileSystemLoader
+from email_handler import EmailHandler
 
 @dataclass
 class NewsItem:
@@ -262,69 +258,6 @@ class AINewsCollector:
             print(f"Claude API error: {e}")
             return "要約の生成中にエラーが発生しました。"
     
-    def _create_html_content(self, summary: str, news_items: List[NewsItem]) -> str:
-        """HTMLメールのコンテンツを生成"""
-        env = Environment(loader=FileSystemLoader('templates'))
-        template = env.get_template('email_template.html')
-
-        # Markdown要約をHTMLに変換
-        summary_html = markdown2.markdown(summary)
-
-        # テンプレートに渡すデータ
-        return template.render(
-            date=datetime.now().strftime('%Y-%m-%d'),
-            generated_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            news_items=news_items[:self.MAX_NEWS_ITEMS_FOR_SUMMARY],
-            summary_html=summary_html
-        )
-
-    def send_email_summary(self, summary: str, recipient_emails: List[str], 
-                          smtp_server: str, smtp_port: int, 
-                          sender_email: str, sender_password: str,
-                          news_items: List[NewsItem]):
-        """テンプレートを使って複数の宛先にHTMLメールを送信"""
-        if not recipient_emails:
-            print("送信先メールアドレスが指定されていません")
-            return
-            
-        try:
-            html_content = self._create_html_content(summary, news_items)
-
-            # SMTP接続を一度だけ確立
-            server = smtplib.SMTP(smtp_server, smtp_port)
-            server.starttls()
-            server.login(sender_email, sender_password)
-            
-            success_count = 0
-            failed_recipients = []
-            
-            # 各受信者に個別にメール送信
-            for recipient_email in recipient_emails:
-                try:
-                    # メール構築
-                    msg = MIMEMultipart()
-                    msg['From'] = sender_email
-                    msg['To'] = recipient_email
-                    msg['Subject'] = f"🤖 AI News Summary - {datetime.now().strftime('%Y-%m-%d')}"
-                    msg.attach(MIMEText(html_content, 'html', 'utf-8'))
-
-                    # 個別送信
-                    server.send_message(msg)
-                    success_count += 1
-                    print(f"メール送信成功: {recipient_email}")
-                    
-                except Exception as e:
-                    failed_recipients.append(recipient_email)
-                    print(f"メール送信失敗 ({recipient_email}): {e}")
-            
-            server.quit()
-            
-            print(f"メール送信完了: 成功 {success_count}件, 失敗 {len(failed_recipients)}件")
-            if failed_recipients:
-                print(f"送信失敗した宛先: {', '.join(failed_recipients)}")
-            
-        except Exception as e:
-            print(f"メール送信エラー (SMTP接続): {e}")
 
     def _collect_all_news(self) -> List[NewsItem]:
         """全ニュースソースから記事を収集"""
@@ -376,14 +309,6 @@ class AINewsCollector:
         print("ファイル保存完了")
         return timestamp
 
-    def _get_email_settings(self) -> Dict[str, any]:
-        """メール設定を環境変数から取得"""
-        return {
-            'smtp_server': os.getenv('SMTP_SERVER'),
-            'smtp_port': int(os.getenv('SMTP_PORT', '587')),
-            'sender_email': os.getenv('EMAIL_ADDRESS'),
-            'sender_password': os.getenv('EMAIL_PASSWORD')
-        }
 
     def run_daily_collection(self, recipient_emails: List[str] = None):
         """日次のニュース収集・要約・配信"""
@@ -400,34 +325,17 @@ class AINewsCollector:
         
         # メール送信（設定されている場合）
         if recipient_emails and len(recipient_emails) > 0:
-            email_settings = self._get_email_settings()
-            self.send_email_summary(
+            email_config = EmailHandler.get_email_config_from_env()
+            email_handler = EmailHandler(email_config)
+            email_handler.send_email_summary(
                 summary, 
                 recipient_emails,
-                **email_settings,
-                news_items=filtered_news
+                filtered_news
             )
         
         return summary
 
 
-def parse_recipient_emails(email_env_var: str) -> List[str]:
-    """環境変数から複数のメールアドレスをパースする（カンマ区切り対応）"""
-    if not email_env_var:
-        return []
-    
-    # カンマ区切りでメールアドレスを分割し、空白を除去
-    emails = [email.strip() for email in email_env_var.split(',')]
-    
-    # 空の要素を除去し、有効なメールアドレスのみを返す
-    valid_emails = []
-    for email in emails:
-        if email and '@' in email:  # 簡単な検証
-            valid_emails.append(email)
-        elif email:  # 無効なアドレスがある場合は警告
-            print(f"警告: 無効なメールアドレス形式をスキップしました: '{email}'")
-    
-    return valid_emails
 
 # 使用例
 def main():
@@ -452,7 +360,7 @@ def main():
     if not test_mode:
         # RECIPIENT_EMAILS (複数対応) または RECIPIENT_EMAIL (後方互換性) から取得
         email_env = os.getenv('RECIPIENT_EMAILS') or os.getenv('RECIPIENT_EMAIL')
-        recipient_emails = parse_recipient_emails(email_env)
+        recipient_emails = EmailHandler.parse_recipient_emails(email_env)
         if recipient_emails:
             print(f"メール送信対象: {len(recipient_emails)}件 - {', '.join(recipient_emails)}")
     
