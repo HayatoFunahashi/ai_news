@@ -1,0 +1,3 @@
+[submodule "tools/common"]
+	path = tools/common
+	url = https://github.com/HayatoFunahashi/common_tools.git
