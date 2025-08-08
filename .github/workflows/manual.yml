@@ -1,8 +1,8 @@
-name: AI News Collector (Weekday 7AM JST)
+name: AI News Collector
 
 on:
   schedule:
-    - cron: '0 22 * * 0-4'  # 毎週月〜金の 07:00 JST（JSTはUTC+9、UTCで22:00）
+    - cron: '0 22 * * *'  # 毎日 07:00 JST（JSTはUTC+9、UTCで22:00）
   workflow_dispatch:        # 手動実行も可能にしておくと便利
 
 jobs:
